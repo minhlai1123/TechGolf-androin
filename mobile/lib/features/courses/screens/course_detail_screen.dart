@@ -4,6 +4,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/storage/offline_course_storage.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../golf_map/screens/golf_map_screen.dart';
+import '../../rounds/screens/round_setup_screen.dart';
 import '../models/course_bundle_models.dart';
 
 /// Screen showing course details, tee box selection, and round start trigger
@@ -380,35 +381,72 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   Widget _buildStartButton() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppTheme.darkSurface,
-        border: const Border(top: BorderSide(color: Colors.white12)),
+        border: Border(top: BorderSide(color: Colors.white12)),
       ),
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton.icon(
-            onPressed: _startRound,
-            icon: const Icon(Icons.navigation_rounded, color: Colors.black),
-            label: const Text(
-              'START GPS MAP',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.0,
-                color: Colors.black,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  if (_bundle == null) return;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RoundSetupScreen(
+                        bundle: _bundle!,
+                        apiClient: widget.apiClient,
+                        storage: widget.storage,
+                        locationService: widget.locationService,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.scoreboard_rounded, color: Colors.black),
+                label: const Text(
+                  'START ROUND (SCORECARD)',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                    color: Colors.black,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryGreen,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               ),
             ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryGreen,
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: OutlinedButton.icon(
+                onPressed: _startRound,
+                icon: const Icon(Icons.navigation_rounded, color: Colors.white70, size: 20),
+                label: const Text(
+                  'GPS MAP ONLY',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                    color: Colors.white,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.white24),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );

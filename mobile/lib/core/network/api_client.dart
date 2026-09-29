@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../constants/app_constants.dart';
 import '../../features/courses/models/course_bundle_models.dart';
+import '../../features/rounds/models/round_models.dart';
+import '../../features/game_modes/game_mode_engine.dart';
 
 class CourseBundleResponse {
   final CourseBundle bundle;
@@ -19,12 +21,19 @@ class CourseBundleResponse {
 class ApiClient {
   final String baseUrl;
   final http.Client _client;
+  String? authToken;
 
   ApiClient({
     String? baseUrl,
     http.Client? client,
+    this.authToken,
   })  : baseUrl = baseUrl ?? _getDefaultBaseUrl(),
         _client = client ?? http.Client();
+
+  Map<String, String> get _headers => {
+        'Content-Type': 'application/json',
+        if (authToken != null) 'Authorization': 'Bearer $authToken',
+      };
 
   static String _getDefaultBaseUrl() {
     if (kIsWeb) {
@@ -41,7 +50,7 @@ class ApiClient {
   /// Fetches course list from backend
   Future<List<CourseInfo>> getCourses() async {
     final uri = Uri.parse('$baseUrl/courses');
-    final response = await _client.get(uri).timeout(const Duration(seconds: 10));
+    final response = await _client.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
@@ -54,7 +63,7 @@ class ApiClient {
   /// Downloads full course bundle
   Future<CourseBundleResponse> getCourseBundle(String courseId) async {
     final uri = Uri.parse('$baseUrl/courses/$courseId/bundle');
-    final response = await _client.get(uri).timeout(const Duration(seconds: 15));
+    final response = await _client.get(uri, headers: _headers).timeout(const Duration(seconds: 15));
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = jsonDecode(response.body);
@@ -65,6 +74,142 @@ class ApiClient {
       );
     } else {
       throw Exception('Failed to load course bundle ($courseId): ${response.statusCode}');
+    }
+  }
+
+  /// Creates a new round with 1 to 4 players
+  Future<RoundModel> createRound({
+    required String courseId,
+    required GameMode gameMode,
+    required List<Map<String, dynamic>> players,
+  }) async {
+    final uri = Uri.parse('$baseUrl/rounds');
+    final payload = jsonEncode({
+      'courseId': courseId,
+      'gameMode': gameMode.value,
+      'players': players,
+    });
+
+    final response = await _client
+        .post(uri, headers: _headers, body: payload)
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return RoundModel.fromJson(data);
+    } else {
+      throw Exception('Failed to create round: ${response.statusCode} - ${response.body}');
+    }
+  }
+
+  /// Retrieves round details
+  Future<RoundModel> getRound(String roundId) async {
+    final uri = Uri.parse('$baseUrl/rounds/$roundId');
+    final response = await _client.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return RoundModel.fromJson(data);
+    } else {
+      throw Exception('Failed to get round: ${response.statusCode}');
+    }
+  }
+
+  /// Starts a round
+  Future<RoundModel> startRound(String roundId) async {
+    final uri = Uri.parse('$baseUrl/rounds/$roundId/start');
+    final response = await _client.post(uri, headers: _headers).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return RoundModel.fromJson(data);
+    } else {
+      throw Exception('Failed to start round: ${response.statusCode}');
+    }
+  }
+
+  /// Updates current hole number
+  Future<void> updateCurrentHole(String roundId, int currentHole) async {
+    final uri = Uri.parse('$baseUrl/rounds/$roundId/current-hole');
+    final payload = jsonEncode({'currentHole': currentHole});
+    final response = await _client
+        .patch(uri, headers: _headers, body: payload)
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update current hole: ${response.statusCode}');
+    }
+  }
+
+  /// Finishes a round
+  Future<RoundModel> finishRound(String roundId) async {
+    final uri = Uri.parse('$baseUrl/rounds/$roundId/finish');
+    final response = await _client.post(uri, headers: _headers).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return RoundModel.fromJson(data);
+    } else {
+      throw Exception('Failed to finish round: ${response.statusCode}');
+    }
+  }
+
+  /// Saves or updates a score for a player on a hole
+  Future<RoundScoreModel> saveScore({
+    required String roundId,
+    required String playerId,
+    required String holeId,
+    required int grossScore,
+    int putts = 0,
+    int penalties = 0,
+    FairwayHit? fairwayHit,
+    bool? gir,
+  }) async {
+    final uri = Uri.parse('$baseUrl/rounds/$roundId/scores');
+    final payload = jsonEncode({
+      'playerId': playerId,
+      'holeId': holeId,
+      'grossScore': grossScore,
+      'putts': putts,
+      'penalties': penalties,
+      'fairwayHit': fairwayHit?.value,
+      'gir': gir,
+    });
+
+    final response = await _client
+        .post(uri, headers: _headers, body: payload)
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return RoundScoreModel.fromJson(data);
+    } else {
+      throw Exception('Failed to save score: ${response.statusCode} - ${response.body}');
+    }
+  }
+
+  /// Retrieves full scorecard matrix
+  Future<ScorecardMatrix> getScorecard(String roundId) async {
+    final uri = Uri.parse('$baseUrl/rounds/$roundId/scorecard');
+    final response = await _client.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return ScorecardMatrix.fromJson(data);
+    } else {
+      throw Exception('Failed to get scorecard: ${response.statusCode}');
+    }
+  }
+
+  /// Retrieves game mode result
+  Future<Map<String, dynamic>> getRoundResult(String roundId) async {
+    final uri = Uri.parse('$baseUrl/rounds/$roundId/result');
+    final response = await _client.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to get round result: ${response.statusCode}');
     }
   }
 
