@@ -10,10 +10,18 @@ import {
 import { GolfBagClub } from '../../golf-bag/entities/golf-bag-club.entity';
 import { HandicapHistory } from '../../handicap/entities/handicap-history.entity';
 
+export enum UserRole {
+  USER = 'USER',
+  ADMIN = 'ADMIN',
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column({ type: 'varchar', length: 20, default: UserRole.USER })
+  role: UserRole;
 
   @Index('idx_users_email', { unique: true })
   @Column({ type: 'varchar', length: 255, unique: true })

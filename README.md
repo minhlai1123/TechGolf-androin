@@ -8,7 +8,7 @@ Dự án ứng dụng Golf toàn diện tương tự Hole19, bao gồm GPS Range
 
 * **Node.js**: >= 20.x (Khuyên dùng v22.x)
 * **npm**: >= 10.x
-* **Docker & Docker Compose**: Để chạy PostgreSQL 16 (PostGIS) và Redis 7
+* **Docker & Docker Compose**: Để chạy PostgreSQL 16 (PostGIS) và Redis 7 *(Lưu ý: Nếu Docker Desktop chưa cài đặt trên máy host, cần cài đặt Docker Desktop để khởi chạy container)*.
 
 ---
 
@@ -43,27 +43,25 @@ cp ../.env.example .env
 npm install
 ```
 
----
-
-## 4. Chạy Migration & Seed dữ liệu
-
-1. **Chạy Migration**:
+3. **Chạy Migrations**:
 ```bash
+# Thực thi toàn bộ Migration Phase 1 và Phase 2 (Course Database & PostGIS)
 npm run migration:run
 ```
 
-2. **Seed dữ liệu mẫu ban đầu (Test User & Golf Bag Clubs)**:
+4. **Seed dữ liệu phát triển**:
 ```bash
+# Seed tài khoản người dùng mẫu
 npm run seed
+
+# Seed dữ liệu sân golf demo (9 hố, Tees, Green F/M/B, Polygons Fairway/Rough/Green/Bunker/Water)
+npm run seed:courses
 ```
 *Tài khoản thử nghiệm sau khi seed:*
-* Email: `dev@techgolf.com`
-* Mật khẩu: `Password123!`
+* **Admin**: `admin@techgolf.com` / `AdminPassword123!` (Toàn quyền quản trị GIS Mapping)
+* **Golfer**: `dev@techgolf.com` / `Password123!` (Người chơi thông thường)
 
----
-
-## 5. Khởi chạy Backend API
-
+5. **Khởi chạy Backend API**:
 ```bash
 # Chế độ phát triển (Hot reload)
 npm run start:dev
@@ -73,47 +71,93 @@ npm run build
 npm run start:prod
 ```
 
-Hệ thống sẽ chạy tại:
+Hệ thống backend sẽ chạy tại:
 * **API Base URL**: `http://localhost:3000/api/v1`
 * **Swagger OpenAPI Docs**: `http://localhost:3000/api/docs`
 * **Health Check**: `http://localhost:3000/api/v1/health`
 
 ---
 
-## 6. Kiểm thử tự động (Automated Testing) & Linting
+## 4. Khởi chạy Web Admin Tool (GIS & Course Mapping Tool)
+
+1. Di chuyển vào thư mục admin và cài đặt dependencies:
+```bash
+cd admin
+npm install
+```
+
+2. Khởi chạy Web Admin ở chế độ phát triển:
+```bash
+npm run dev
+```
+
+* **Admin Web URL**: `http://localhost:5173`
+* Tích hợp sẵn:
+  * Quản lý danh sách sân golf (Tìm kiếm, Thêm, Sửa, Xóa).
+  * Điều hướng hố golf (Hole 1 - 18, Par, Stroke Index).
+  * **Interactive GIS Canvas**: Ảnh vệ tinh độ phân giải cao (ESRI World Imagery), vẽ vector Fairway, Green, Bunker, Water Hazard, Rough, và đặt các điểm ghim cờ Green (F/M/B), ghim vị trí Tee Markers.
+
+---
+
+## 5. Kiểm thử tự động (Automated Testing) & Linting
 
 ```bash
-# Chạy toàn bộ Test Suites
+# Backend Test Suites (53 tests pass)
+cd backend
 npm test
 
-# Chạy Test kèm báo cáo Coverage
-npm run test:cov
-
-# Kiểm tra Lint & Code Style
+# Backend Lint & Build
 npm run lint
+npm run build
 
-# Build dự án
+# Admin Web Build
+cd ../admin
 npm run build
 ```
 
 ---
 
-## 7. Cấu trúc API Endpoints (Phase 1)
+## 6. Cấu trúc API Endpoints (Phase 1 & Phase 2)
 
-### Authentication
-* `POST /api/v1/auth/register` — Đăng ký tài khoản golfer mới
-* `POST /api/v1/auth/login` — Đăng nhập và nhận JWT access token
-* `GET  /api/v1/auth/me` — Lấy thông tin tài khoản hiện tại (Yêu cầu JWT)
-
-### User Profile
-* `GET   /api/v1/users/me` — Lấy hồ sơ người dùng
-* `PATCH /api/v1/users/me` — Cập nhật hồ sơ (Tên, Avatar, Handicap Index)
+### Authentication & Users
+* `POST /api/v1/auth/register` — Đăng ký tài khoản
+* `POST /api/v1/auth/login` — Đăng nhập và nhận JWT
+* `GET  /api/v1/auth/me` — Lấy thông tin tài khoản hiện tại
+* `GET  /api/v1/users/me` — Lấy hồ sơ cá nhân
+* `PATCH /api/v1/users/me` — Cập nhật hồ sơ cá nhân
 
 ### Virtual Golf Bag
 * `GET    /api/v1/bag/clubs` — Lấy danh sách gậy trong túi
 * `POST   /api/v1/bag/clubs` — Thêm gậy mới vào túi
-* `PUT    /api/v1/bag/clubs/:id` — Cập nhật thông số gậy (Chỉ chủ sở hữu)
-* `DELETE /api/v1/bag/clubs/:id` — Xóa gậy khỏi túi (Chỉ chủ sở hữu)
+* `PUT    /api/v1/bag/clubs/:id` — Cập nhật thông số gậy
+* `DELETE /api/v1/bag/clubs/:id` — Xóa gậy khỏi túi
 
-### System Health
-* `GET /api/v1/health` — Kiểm tra trạng thái Backend, PostgreSQL Database và Redis
+### Courses & GIS Database (Phase 2)
+* `GET    /api/v1/courses` — Tìm kiếm và liệt kê sân golf
+* `GET    /api/v1/courses/:id` — Chi tiết sân golf kèm hố và tees
+* `POST   /api/v1/courses` — [Admin] Tạo sân golf mới kèm tọa độ không gian
+* `PATCH  /api/v1/courses/:id` — [Admin] Cập nhật thông tin sân golf
+* `DELETE /api/v1/courses/:id` — [Admin] Xóa sân golf
+
+### Holes & Mapping Data
+* `GET    /api/v1/courses/:courseId/holes` — Danh sách các hố của sân
+* `POST   /api/v1/courses/:courseId/holes` — [Admin] Thêm hố vào sân (Par, Stroke Index)
+* `GET    /api/v1/holes/:id` — Chi tiết hố golf
+* `PATCH  /api/v1/holes/:id` — [Admin] Cập nhật thông số hố & tọa độ Green F/M/B
+* `DELETE /api/v1/holes/:id` — [Admin] Xóa hố
+* `GET    /api/v1/holes/:id/map` — **GeoJSON FeatureCollection** của hố (Green F/M/B, Tee Markers, Vector Polygons) phục vụ render bản đồ Mobile & Admin
+
+### Course Tees & Markers
+* `GET    /api/v1/courses/:courseId/tees` — Danh sách các Tee của sân (Red, White, Blue, Black...)
+* `POST   /api/v1/courses/:courseId/tees` — [Admin] Thêm loại Tee kèm Course Rating và Slope Rating
+* `PATCH  /api/v1/course-tees/:id` — [Admin] Sửa thông số Tee
+* `DELETE /api/v1/course-tees/:id` — [Admin] Xóa loại Tee
+* `GET    /api/v1/holes/:holeId/tees` — Danh sách ghim Tee trên hố
+* `POST   /api/v1/holes/:holeId/tees` — [Admin] Đặt/Cập nhật tọa độ ghim Tee trên hố
+* `DELETE /api/v1/hole-tees/:id` — [Admin] Gỡ ghim Tee trên hố
+
+### Vector Polygons (Course Mapping Tool)
+* `GET    /api/v1/holes/:holeId/polygons` — Danh sách polygon của hố
+* `POST   /api/v1/holes/:holeId/polygons` — [Admin] Lưu polygon vector (Fairway, Green, Bunker, Water Hazard, Rough, Tee)
+* `PATCH  /api/v1/polygons/:id` — [Admin] Sửa tọa độ polygon
+* `DELETE /api/v1/polygons/:id` — [Admin] Xóa polygon

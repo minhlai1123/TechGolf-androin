@@ -21,7 +21,8 @@
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/database/data-source.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts",
-    "seed": "ts-node src/database/seeds/dev-seed.ts"
+    "seed": "ts-node src/database/seeds/dev-seed.ts",
+    "seed:courses": "ts-node src/database/seeds/course-demo-seed.ts"
   },
   "dependencies": {
     "@fastify/static": "^7.0.4",
