@@ -161,3 +161,38 @@ npm run build
 * `POST   /api/v1/holes/:holeId/polygons` — [Admin] Lưu polygon vector (Fairway, Green, Bunker, Water Hazard, Rough, Tee)
 * `PATCH  /api/v1/polygons/:id` — [Admin] Sửa tọa độ polygon
 * `DELETE /api/v1/polygons/:id` — [Admin] Xóa polygon
+
+### Course Bundles (Phase 3 Offline Engine)
+* `GET    /api/v1/courses/:id/bundle` — Tải toàn bộ course metadata, holes, tees, green F/M/B, và GeoJSON polygons gói trọn trong 1 request phục vụ offline play.
+
+---
+
+## 7. Khởi chạy Ứng dụng Mobile (Phase 3 - Flutter App)
+
+TechGolf Mobile được xây dựng bằng Flutter/Dart tại thư mục `mobile/`:
+
+```bash
+cd mobile
+
+# Cài đặt dependencies
+flutter pub get
+
+# Kiểm tra phân tích tĩnh code (0 issues)
+flutter analyze
+
+# Chạy toàn bộ 20 unit tests tự động
+flutter test
+
+# Khởi chạy trên thiết bị / emulator / desktop
+flutter run
+```
+
+### Các tính năng cốt lõi đã hoàn thành:
+1. **WGS84 Geodesic Distance Engine**: Tính khoảng cách trắc địa bằng công thức Haversine hình cầu WGS84, chuyển đổi m <-> yd chính xác.
+2. **F/M/B Distance Dashboard**: Màn hình HUD độ tương phản cao ngoài trời, số to rõ ràng cho người chơi dưới ánh nắng gắt, cập nhật khoảng cách thực tế đến Front, Center, Back Green.
+3. **Interactive Map & ESRI World Imagery Satellite**: Hiển thị lớp bản đồ vệ tinh độ phân giải cao kết hợp vector polygon màu chuẩn (Green, Fairway, Tee box, Bunker, Water hazard, Rough).
+4. **Target / Layup Dragging**: Ghim mục tiêu kéo thả linh hoạt trên màn hình, tính toán song song 2 khoảng cách (Player -> Target và Target -> Green).
+5. **Distance Arcs (Hole19 Signature)**: Các cung tròn khoảng cách 150yd (137.16m), 200yd (182.88m), 250yd (228.6m) đồng tâm quanh vị trí người chơi.
+6. **Auto-Hole Geofencing**: Bộ máy trạng thái phát hiện rời green hiện tại (`Green Exit` > 35m) và tiến vào tee box hố kế tiếp (`Next Tee Entry` < 30m) có lọc nhiễu GPS jitter (> 15m) và debounce 2 chu kỳ.
+7. **Offline Course Data Bundle**: Tải và lưu trữ trọn gói sân golf vào local cache, tự động phát hiện offline để tiếp tục vòng golf không gián đoạn.
+8. **1-18 Hole Navigation**: Chuyển hố thủ công và bảng chọn lưới 18 hố trực quan.

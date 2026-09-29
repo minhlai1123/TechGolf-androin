@@ -47,6 +47,15 @@ export class CoursesController {
     return this.coursesService.findById(id);
   }
 
+  @Get(':id/bundle')
+  @ApiOperation({ summary: 'Download complete offline course bundle (metadata, holes, tees, vector GeoJSON)' })
+  @ApiParam({ name: 'id', description: 'Course UUID' })
+  @ApiResponse({ status: 200, description: 'Complete offline course bundle' })
+  @ApiResponse({ status: 404, description: 'Course not found' })
+  async getBundle(@Param('id', ParseUUIDPipe) id: string) {
+    return this.coursesService.getCourseBundle(id);
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
