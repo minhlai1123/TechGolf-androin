@@ -17,6 +17,9 @@ import '../widgets/fmb_distance_dashboard.dart';
 import '../widgets/hole_navigation_bar.dart';
 import '../widgets/map_controls_overlay.dart';
 import '../widgets/target_distance_banner.dart';
+import '../../shots/screens/shot_tracker_screen.dart';
+import '../../shots/widgets/caddie_insights_card.dart';
+import '../../../core/geo/plays_like_engine.dart';
 
 /// Main Golf GPS Map Screen (Phase 3 Core)
 class GolfMapScreen extends StatefulWidget {
@@ -296,6 +299,59 @@ class _GolfMapScreenState extends State<GolfMapScreen> {
       position: _targetPosition!,
       distanceFromPlayerMeters: distFromPlayer,
       distanceToGreenMeters: distToGreen,
+    );
+  }
+
+  void _openCaddieSheet(FmbDistances fmb, TargetLayupPoint? target) {
+    double distMeters = 0.0;
+    if (target != null && target.distanceFromPlayerMeters != null) {
+      distMeters = target.distanceFromPlayerMeters!;
+    } else if (fmb.centerMeters != null) {
+      distMeters = fmb.centerMeters!;
+    }
+
+    final unitType = _distanceUnit == DistanceUnit.yards
+        ? DistanceUnitType.yards
+        : DistanceUnitType.meters;
+
+    final double remaining = _distanceUnit == DistanceUnit.yards
+        ? DistanceEngine.metersToYards(distMeters)
+        : distMeters;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+        ),
+        child: CaddieInsightsCard(
+          remainingDistance: remaining,
+          unit: unitType,
+          startElevation: _currentLocation?.altitude,
+          targetElevation: null, // DEM provider interface will supply
+          clubs: const [], // Active clubs from user golf bag
+        ),
+      ),
+    );
+  }
+
+  void _openShotTracker() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ShotTrackerScreen(
+          roundId: widget.bundle.course.id,
+          playerId: 'current_user',
+          holeId: _currentHole.id,
+          holeNumber: _currentHole.holeNumber,
+          par: _currentHole.par,
+          unit: _distanceUnit == DistanceUnit.yards
+              ? DistanceUnitType.yards
+              : DistanceUnitType.meters,
+          locationService: widget.locationService,
+        ),
+      ),
     );
   }
 
@@ -634,6 +690,8 @@ class _GolfMapScreenState extends State<GolfMapScreen> {
                   _areArcsVisible = !_areArcsVisible;
                 });
               },
+              onOpenCaddie: () => _openCaddieSheet(fmb, target),
+              onOpenShotTracker: _openShotTracker,
             ),
           ),
 

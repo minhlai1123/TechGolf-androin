@@ -7,6 +7,7 @@ import { GolfBagModule } from './golf-bag/golf-bag.module';
 import { HealthModule } from './health/health.module';
 import { CoursesModule } from './courses/courses.module';
 import { RoundsModule } from './rounds/rounds.module';
+import { ShotsModule } from './shots/shots.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { RoundsModule } from './rounds/rounds.module';
     HealthModule,
     CoursesModule,
     RoundsModule,
+    ShotsModule,
   ],
 })
 export class AppModule {}

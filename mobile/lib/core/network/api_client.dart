@@ -213,6 +213,122 @@ class ApiClient {
     }
   }
 
+  /// Start a shot in a round
+  Future<Map<String, dynamic>> startShot({
+    required String roundId,
+    required String playerId,
+    required String holeId,
+    required double latitude,
+    required double longitude,
+    String? clubId,
+    double? elevation,
+    String unit = 'YARDS',
+  }) async {
+    final uri = Uri.parse('$baseUrl/rounds/$roundId/shots/start');
+    final Map<String, dynamic> payload = {
+      'playerId': playerId,
+      'holeId': holeId,
+      'latitude': latitude,
+      'longitude': longitude,
+      'unit': unit,
+    };
+    if (clubId != null) payload['clubId'] = clubId;
+    if (elevation != null) payload['elevation'] = elevation;
+    final body = jsonEncode(payload);
+
+    final response = await _client.post(uri, headers: _headers, body: body).timeout(const Duration(seconds: 10));
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to start shot: ${response.statusCode} - ${response.body}');
+    }
+  }
+
+  /// Save completed shot with end coordinates and club
+  Future<Map<String, dynamic>> saveShot({
+    required String roundId,
+    required String shotId,
+    required String clubId,
+    required double latitude,
+    required double longitude,
+    double? elevation,
+    String unit = 'YARDS',
+  }) async {
+    final uri = Uri.parse('$baseUrl/rounds/$roundId/shots/$shotId/save');
+    final Map<String, dynamic> payload = {
+      'clubId': clubId,
+      'latitude': latitude,
+      'longitude': longitude,
+      'unit': unit,
+    };
+    if (elevation != null) payload['elevation'] = elevation;
+    final body = jsonEncode(payload);
+
+    final response = await _client.post(uri, headers: _headers, body: body).timeout(const Duration(seconds: 10));
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to save shot: ${response.statusCode} - ${response.body}');
+    }
+  }
+
+  /// Get shots in round
+  Future<List<dynamic>> getShotsByRound(String roundId) async {
+    final uri = Uri.parse('$baseUrl/rounds/$roundId/shots');
+    final response = await _client.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as List<dynamic>;
+    } else {
+      throw Exception('Failed to get round shots: ${response.statusCode}');
+    }
+  }
+
+  /// Get shots for hole
+  Future<List<dynamic>> getShotsByHole(String roundId, String holeId) async {
+    final uri = Uri.parse('$baseUrl/rounds/$roundId/holes/$holeId/shots');
+    final response = await _client.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as List<dynamic>;
+    } else {
+      throw Exception('Failed to get hole shots: ${response.statusCode}');
+    }
+  }
+
+  /// Get user's club average distances
+  Future<List<dynamic>> getClubDistances() async {
+    final uri = Uri.parse('$baseUrl/bag/clubs/distances');
+    final response = await _client.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as List<dynamic>;
+    } else {
+      throw Exception('Failed to get club distances: ${response.statusCode}');
+    }
+  }
+
+  /// Recommend club based on distance and elevation
+  Future<Map<String, dynamic>> recommendClub({
+    required double remainingDistance,
+    String unit = 'YARDS',
+    double? startElevation,
+    double? targetElevation,
+  }) async {
+    final uri = Uri.parse('$baseUrl/bag/clubs/recommend');
+    final Map<String, dynamic> payload = {
+      'remainingDistance': remainingDistance,
+      'unit': unit,
+    };
+    if (startElevation != null) payload['startElevation'] = startElevation;
+    if (targetElevation != null) payload['targetElevation'] = targetElevation;
+    final body = jsonEncode(payload);
+
+    final response = await _client.post(uri, headers: _headers, body: body).timeout(const Duration(seconds: 10));
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to get club recommendation: ${response.statusCode}');
+    }
+  }
+
   void close() {
     _client.close();
   }

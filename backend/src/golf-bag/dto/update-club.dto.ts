@@ -24,4 +24,8 @@ export class UpdateClubDto {
   @IsNumber()
   @Min(0)
   total_shots_recorded?: number;
+
+  @ApiProperty({ example: true, required: false })
+  @IsOptional()
+  is_active?: boolean;
 }

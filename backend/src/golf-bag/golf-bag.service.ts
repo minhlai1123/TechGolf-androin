@@ -46,6 +46,7 @@ export class GolfBagService {
       custom_name: dto.custom_name?.trim(),
       average_distance_meters: dto.average_distance_meters ?? 0.0,
       total_shots_recorded: dto.total_shots_recorded ?? 0,
+      is_active: dto.is_active ?? true,
     });
 
     return this.clubRepository.save(club);
@@ -69,6 +70,9 @@ export class GolfBagService {
     }
     if (dto.total_shots_recorded !== undefined) {
       club.total_shots_recorded = dto.total_shots_recorded;
+    }
+    if (dto.is_active !== undefined) {
+      club.is_active = dto.is_active;
     }
 
     return this.clubRepository.save(club);

@@ -10,6 +10,9 @@ class AppTheme {
   static const Color textHighContrast = Colors.white;
   static const Color textMuted = Color(0xFFA5D6A7);
   static const Color goldAccent = Color(0xFFFFD54F);
+  static const Color accentGold = Color(0xFFFFD54F);
+  static const Color accentOrange = Color(0xFFFF9800);
+  static const Color primaryRed = Color(0xFFE53935);
 
   static ThemeData get darkTheme {
     return ThemeData(

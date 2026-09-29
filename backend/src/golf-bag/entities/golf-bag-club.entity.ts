@@ -56,6 +56,9 @@ export class GolfBagClub {
   @Column({ type: 'int', default: 0 })
   total_shots_recorded: number;
 
+  @Column({ type: 'boolean', default: true })
+  is_active: boolean;
+
   @CreateDateColumn({ type: 'timestamp with time zone' })
   created_at: Date;
 

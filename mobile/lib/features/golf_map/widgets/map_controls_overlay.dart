@@ -11,6 +11,8 @@ class MapControlsOverlay extends StatelessWidget {
   final VoidCallback onFitHole;
   final VoidCallback onToggleMapLayer;
   final VoidCallback onToggleArcs;
+  final VoidCallback? onOpenCaddie;
+  final VoidCallback? onOpenShotTracker;
 
   const MapControlsOverlay({
     super.key,
@@ -22,6 +24,8 @@ class MapControlsOverlay extends StatelessWidget {
     required this.onFitHole,
     required this.onToggleMapLayer,
     required this.onToggleArcs,
+    this.onOpenCaddie,
+    this.onOpenShotTracker,
   });
 
   @override
@@ -29,6 +33,30 @@ class MapControlsOverlay extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Caddie Insights Button
+        if (onOpenCaddie != null) ...[
+          _buildFab(
+            icon: Icons.psychology_outlined,
+            label: 'Caddie',
+            isActive: false,
+            activeColor: AppTheme.accentGold,
+            onTap: onOpenCaddie!,
+          ),
+          const SizedBox(height: 8),
+        ],
+
+        // Shot Tracker Button
+        if (onOpenShotTracker != null) ...[
+          _buildFab(
+            icon: Icons.sports_golf,
+            label: 'Shot',
+            isActive: false,
+            activeColor: AppTheme.primaryGreen,
+            onTap: onOpenShotTracker!,
+          ),
+          const SizedBox(height: 8),
+        ],
+
         // Target / Layup Drag Toggle
         _buildFab(
           icon: Icons.gps_fixed,
