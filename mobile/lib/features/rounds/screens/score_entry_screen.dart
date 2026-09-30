@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../core/location/location_service.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/storage/offline_course_storage.dart';
+import '../../../core/storage/offline_score_storage.dart';
+import '../../shots/services/offline_shot_storage.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../courses/models/course_bundle_models.dart';
 import '../../game_modes/game_mode_engine.dart';
@@ -49,6 +51,21 @@ class _ScoreEntryScreenState extends State<ScoreEntryScreen> {
     super.initState();
     _currentHoleNumber = widget.initialHoleNumber;
     _initScoresForCurrentHole();
+    _loadOfflineScores();
+  }
+
+  Future<void> _loadOfflineScores() async {
+    final saved = await OfflineScoreStorage.getScoresForRound(widget.round.id);
+    if (saved.isNotEmpty && mounted) {
+      setState(() {
+        _scoresCache.addAll(saved);
+      });
+    }
+    // Attempt opportunistic sync of any pending scores or pending shots
+    try {
+      await OfflineScoreStorage.syncPendingScores(widget.apiClient, widget.round.id);
+      await OfflineShotStorage.syncPendingShots(widget.apiClient, widget.round.id);
+    } catch (_) {}
   }
 
   HoleData get _currentHole {
@@ -113,6 +130,10 @@ class _ScoreEntryScreenState extends State<ScoreEntryScreen> {
     for (final player in widget.round.players) {
       final score = _scoresCache[_cacheKey(player.id, hole.id)];
       if (score != null) {
+        // 1. Immediately persist to local offline storage as pending
+        await OfflineScoreStorage.saveScore(score, isPending: true);
+
+        // 2. Attempt online sync
         try {
           await widget.apiClient.saveScore(
             roundId: widget.round.id,
@@ -124,15 +145,26 @@ class _ScoreEntryScreenState extends State<ScoreEntryScreen> {
             fairwayHit: score.fairwayHit,
             gir: score.gir,
           );
+
+          // Mark as successfully synced
+          await OfflineScoreStorage.markScoreSynced(widget.round.id, player.id, hole.id);
         } catch (_) {
-          // In offline mode, scores are kept in memory and local storage
+          // Offline mode: safely preserved in local storage pending queue
         }
       }
     }
 
-    setState(() {
-      _isSaving = false;
-    });
+    // Opportunistically flush any remaining pending scores
+    try {
+      await OfflineScoreStorage.syncPendingScores(widget.apiClient, widget.round.id);
+      await OfflineShotStorage.syncPendingShots(widget.apiClient, widget.round.id);
+    } catch (_) {}
+
+    if (mounted) {
+      setState(() {
+        _isSaving = false;
+      });
+    }
   }
 
   void _onNextHole() async {

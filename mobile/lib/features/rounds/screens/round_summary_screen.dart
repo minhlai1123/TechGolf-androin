@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/storage/offline_course_storage.dart';
+import '../../../core/storage/offline_score_storage.dart';
+import '../../shots/services/offline_shot_storage.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../courses/models/course_bundle_models.dart';
 import '../../game_modes/game_mode_engine.dart';
@@ -44,6 +46,14 @@ class _RoundSummaryScreenState extends State<RoundSummaryScreen> {
     _healthService = widget.healthService ?? HealthService();
     _fetchApiResult();
     _fetchHealthMetrics();
+    _syncPendingOfflineData();
+  }
+
+  Future<void> _syncPendingOfflineData() async {
+    try {
+      await OfflineScoreStorage.syncPendingScores(widget.apiClient, widget.round.id);
+      await OfflineShotStorage.syncPendingShots(widget.apiClient, widget.round.id);
+    } catch (_) {}
   }
 
   Future<void> _fetchHealthMetrics() async {

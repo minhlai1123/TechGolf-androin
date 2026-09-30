@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/storage/offline_score_storage.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../courses/models/course_bundle_models.dart';
 import '../../game_modes/game_mode_engine.dart';
@@ -50,6 +51,11 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
       _isLoading = true;
     });
 
+    // Opportunistically flush pending offline scores before fetching scorecard
+    try {
+      await OfflineScoreStorage.syncPendingScores(widget.apiClient, widget.round.id);
+    } catch (_) {}
+
     try {
       final matrix = await widget.apiClient.getScorecard(widget.round.id);
       if (mounted) {
@@ -59,7 +65,13 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
         });
       }
     } catch (_) {
-      // Offline fallback: construct matrix from bundle and localScores
+      // Offline fallback: construct matrix from bundle and localScores (or OfflineScoreStorage)
+      var effectiveScores = widget.localScores;
+      if (effectiveScores.isEmpty) {
+        final cached = await OfflineScoreStorage.getScoresForRound(widget.round.id);
+        effectiveScores = cached.values.toList();
+      }
+
       final holesList = widget.bundle.holes
           .map((h) => ScorecardHoleInfo(
                 id: h.id,
@@ -70,7 +82,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
           .toList();
 
       final totals = widget.round.players.map((p) {
-        final pScores = widget.localScores.filter((s) => s.playerId == p.id);
+        final pScores = effectiveScores.filter((s) => s.playerId == p.id);
         int gross = 0;
         int putts = 0;
         int penalties = 0;
