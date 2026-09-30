@@ -80,6 +80,7 @@ export class RoundsService {
         playerName: p.playerName,
         playerOrder: p.playerOrder,
         teamId: p.teamId || null,
+        teeId: p.teeId || null,
       }),
     );
 

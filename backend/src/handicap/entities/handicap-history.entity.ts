@@ -31,6 +31,18 @@ export class HandicapHistory {
   @Column({ type: 'decimal', precision: 4, scale: 1 })
   resulting_handicap_index: number;
 
+  @Column({ type: 'int', default: 0 })
+  rounds_count: number;
+
+  @Column({ type: 'int', default: 0 })
+  differentials_used_count: number;
+
+  @Column({ type: 'text', nullable: true })
+  differentials_used_json: string | null;
+
+  @Column({ type: 'varchar', length: 30, default: 'VALID' })
+  status: string;
+
   @CreateDateColumn({ type: 'timestamp with time zone' })
   calculated_at: Date;
 }

@@ -8,6 +8,9 @@ import { HealthModule } from './health/health.module';
 import { CoursesModule } from './courses/courses.module';
 import { RoundsModule } from './rounds/rounds.module';
 import { ShotsModule } from './shots/shots.module';
+import { HandicapModule } from './handicap/handicap.module';
+import { StatisticsModule } from './statistics/statistics.module';
+import { StrokesGainedModule } from './strokes-gained/strokes-gained.module';
 
 @Module({
   imports: [
@@ -20,6 +23,9 @@ import { ShotsModule } from './shots/shots.module';
     CoursesModule,
     RoundsModule,
     ShotsModule,
+    HandicapModule,
+    StatisticsModule,
+    StrokesGainedModule,
   ],
 })
 export class AppModule {}

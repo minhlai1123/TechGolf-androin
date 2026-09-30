@@ -9,6 +9,7 @@ import { CourseTee } from '../courses/entities/course-tee.entity';
 import { Hole } from '../courses/entities/hole.entity';
 import { HoleTee } from '../courses/entities/hole-tee.entity';
 import { HolePolygon } from '../courses/entities/hole-polygon.entity';
+import { ScoreDifferential } from '../handicap/entities/score-differential.entity';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { HolePolygon } from '../courses/entities/hole-polygon.entity';
           User,
           GolfBagClub,
           HandicapHistory,
+          ScoreDifferential,
           Course,
           CourseTee,
           Hole,

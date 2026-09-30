@@ -35,6 +35,11 @@ export class RoundPlayerInputDto {
   @IsOptional()
   @IsString()
   teamId?: string;
+
+  @ApiPropertyOptional({ description: 'Course Tee UUID', format: 'uuid' })
+  @IsOptional()
+  @IsUUID('4')
+  teeId?: string;
 }
 
 export class CreateRoundDto {

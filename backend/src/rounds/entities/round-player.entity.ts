@@ -12,6 +12,7 @@ import {
 import { Round } from './round.entity';
 import { User } from '../../users/entities/user.entity';
 import { RoundScore } from './round-score.entity';
+import { CourseTee } from '../../courses/entities/course-tee.entity';
 
 @Entity('round_players')
 @Unique('uq_round_players_round_order', ['roundId', 'playerOrder'])
@@ -43,6 +44,13 @@ export class RoundPlayer {
 
   @Column({ name: 'team_id', type: 'varchar', length: 50, nullable: true })
   teamId: string | null;
+
+  @Column({ name: 'tee_id', type: 'uuid', nullable: true })
+  teeId: string | null;
+
+  @ManyToOne(() => CourseTee, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'tee_id' })
+  tee: CourseTee | null;
 
   @OneToMany(() => RoundScore, (score) => score.player, { cascade: true })
   scores: RoundScore[];

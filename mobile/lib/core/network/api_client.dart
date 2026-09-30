@@ -6,6 +6,9 @@ import '../constants/app_constants.dart';
 import '../../features/courses/models/course_bundle_models.dart';
 import '../../features/rounds/models/round_models.dart';
 import '../../features/game_modes/game_mode_engine.dart';
+import '../../features/handicap/models/handicap_models.dart';
+import '../../features/statistics/models/statistics_models.dart';
+import '../../features/strokes_gained/models/strokes_gained_models.dart';
 
 class CourseBundleResponse {
   final CourseBundle bundle;
@@ -326,6 +329,89 @@ class ApiClient {
       return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
       throw Exception('Failed to get club recommendation: ${response.statusCode}');
+    }
+  }
+
+  /// Get current WHS Handicap Index
+  Future<HandicapCurrentModel> getCurrentHandicap() async {
+    final uri = Uri.parse('$baseUrl/handicap/current');
+    final response = await _client.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
+    if (response.statusCode == 200) {
+      return HandicapCurrentModel.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    } else {
+      throw Exception('Failed to get current handicap: ${response.statusCode}');
+    }
+  }
+
+  /// Get chronological handicap history
+  Future<List<HandicapHistoryModel>> getHandicapHistory() async {
+    final uri = Uri.parse('$baseUrl/handicap/history');
+    final response = await _client.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
+    if (response.statusCode == 200) {
+      final List<dynamic> list = jsonDecode(response.body);
+      return list.map((j) => HandicapHistoryModel.fromJson(j as Map<String, dynamic>)).toList();
+    } else {
+      throw Exception('Failed to get handicap history: ${response.statusCode}');
+    }
+  }
+
+  /// Get recorded score differentials
+  Future<List<ScoreDifferentialModel>> getScoreDifferentials() async {
+    final uri = Uri.parse('$baseUrl/handicap/differentials');
+    final response = await _client.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
+    if (response.statusCode == 200) {
+      final List<dynamic> list = jsonDecode(response.body);
+      return list.map((j) => ScoreDifferentialModel.fromJson(j as Map<String, dynamic>)).toList();
+    } else {
+      throw Exception('Failed to get score differentials: ${response.statusCode}');
+    }
+  }
+
+  /// Recalculate WHS Handicap Index
+  Future<Map<String, dynamic>> recalculateHandicap() async {
+    final uri = Uri.parse('$baseUrl/handicap/recalculate');
+    final response = await _client.post(uri, headers: _headers).timeout(const Duration(seconds: 10));
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to recalculate handicap: ${response.statusCode}');
+    }
+  }
+
+  /// Get golf statistics overview
+  Future<StatsOverviewModel> getStatsOverview({int? limit}) async {
+    final query = limit != null ? '?limit=$limit' : '';
+    final uri = Uri.parse('$baseUrl/stats/overview$query');
+    final response = await _client.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
+    if (response.statusCode == 200) {
+      return StatsOverviewModel.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    } else {
+      throw Exception('Failed to get stats overview: ${response.statusCode}');
+    }
+  }
+
+  /// Get chronological performance trends
+  Future<List<TrendPointModel>> getStatsTrends({int? limit}) async {
+    final query = limit != null ? '?limit=$limit' : '';
+    final uri = Uri.parse('$baseUrl/stats/trends$query');
+    final response = await _client.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
+    if (response.statusCode == 200) {
+      final List<dynamic> list = jsonDecode(response.body);
+      return list.map((j) => TrendPointModel.fromJson(j as Map<String, dynamic>)).toList();
+    } else {
+      throw Exception('Failed to get stats trends: ${response.statusCode}');
+    }
+  }
+
+  /// Get Strokes Gained analytics
+  Future<StrokesGainedSummaryModel> getStrokesGained({String? roundId}) async {
+    final query = roundId != null ? '?roundId=$roundId' : '';
+    final uri = Uri.parse('$baseUrl/stats/strokes-gained$query');
+    final response = await _client.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
+    if (response.statusCode == 200) {
+      return StrokesGainedSummaryModel.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    } else {
+      throw Exception('Failed to get strokes gained: ${response.statusCode}');
     }
   }
 
