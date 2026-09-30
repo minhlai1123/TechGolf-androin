@@ -6,6 +6,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../courses/models/course_bundle_models.dart';
 import '../../game_modes/game_mode_engine.dart';
 import '../../golf_map/screens/golf_map_screen.dart';
+import '../../health/screens/health_dashboard_screen.dart';
+import '../../health/services/health_service.dart';
 import '../../liveplay/screens/liveplay_screen.dart';
 import '../models/round_models.dart';
 import 'scorecard_screen.dart';
@@ -224,6 +226,19 @@ class _ScoreEntryScreenState extends State<ScoreEntryScreen> {
     );
   }
 
+  void _openHealth() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HealthDashboardScreen(
+          healthService: HealthService(),
+          activeRoundId: widget.round.id,
+          courseName: widget.bundle.course.name,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final hole = _currentHole;
@@ -237,6 +252,11 @@ class _ScoreEntryScreenState extends State<ScoreEntryScreen> {
       appBar: AppBar(
         title: Text('HOLE ${hole.holeNumber}'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.favorite_border, color: AppTheme.primaryRed),
+            tooltip: 'Health & Workout',
+            onPressed: _openHealth,
+          ),
           IconButton(
             icon: const Icon(Icons.bolt, color: Colors.amber),
             tooltip: 'LivePlay Realtime',

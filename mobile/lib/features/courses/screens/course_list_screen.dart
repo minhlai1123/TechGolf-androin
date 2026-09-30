@@ -4,6 +4,9 @@ import '../../../core/network/api_client.dart';
 import '../../../core/storage/offline_course_storage.dart';
 import '../../../core/theme/app_theme.dart';
 import '../models/course_bundle_models.dart';
+import '../../health/screens/health_dashboard_screen.dart';
+import '../../health/services/health_service.dart';
+import '../../statistics/screens/stats_dashboard_screen.dart';
 import 'course_detail_screen.dart';
 
 /// Screen listing available golf courses with offline download management
@@ -11,12 +14,14 @@ class CourseListScreen extends StatefulWidget {
   final ApiClient apiClient;
   final OfflineCourseStorage storage;
   final LocationService locationService;
+  final IHealthService? healthService;
 
   const CourseListScreen({
     super.key,
     required this.apiClient,
     required this.storage,
     required this.locationService,
+    this.healthService,
   });
 
   @override
@@ -120,6 +125,34 @@ class _CourseListScreenState extends State<CourseListScreen> {
       appBar: AppBar(
         title: const Text('GOLF COURSES'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.favorite_border, color: AppTheme.primaryRed),
+            tooltip: 'Health Integration',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => HealthDashboardScreen(
+                    healthService: widget.healthService ?? HealthService(),
+                  ),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.bar_chart, color: Colors.white70),
+            tooltip: 'Golf Statistics',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StatsDashboardScreen(
+                    apiClient: widget.apiClient,
+                  ),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadCourses,

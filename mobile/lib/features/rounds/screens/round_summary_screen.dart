@@ -4,6 +4,9 @@ import '../../../core/storage/offline_course_storage.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../courses/models/course_bundle_models.dart';
 import '../../game_modes/game_mode_engine.dart';
+import '../../health/models/health_models.dart';
+import '../../health/screens/health_dashboard_screen.dart';
+import '../../health/services/health_service.dart';
 import '../models/round_models.dart';
 import 'scorecard_screen.dart';
 
@@ -14,6 +17,7 @@ class RoundSummaryScreen extends StatefulWidget {
   final ApiClient apiClient;
   final OfflineCourseStorage storage;
   final Map<String, RoundScoreModel> scoresMap;
+  final IHealthService? healthService;
 
   const RoundSummaryScreen({
     super.key,
@@ -22,6 +26,7 @@ class RoundSummaryScreen extends StatefulWidget {
     required this.apiClient,
     required this.storage,
     required this.scoresMap,
+    this.healthService,
   });
 
   @override
@@ -30,11 +35,29 @@ class RoundSummaryScreen extends StatefulWidget {
 
 class _RoundSummaryScreenState extends State<RoundSummaryScreen> {
   Map<String, dynamic>? _apiResult;
+  GolfHealthMetrics? _healthMetrics;
+  late final IHealthService _healthService;
 
   @override
   void initState() {
     super.initState();
+    _healthService = widget.healthService ?? HealthService();
     _fetchApiResult();
+    _fetchHealthMetrics();
+  }
+
+  Future<void> _fetchHealthMetrics() async {
+    try {
+      final metrics = await _healthService.getRoundHealthMetrics(
+        roundId: widget.round.id,
+        startTime: DateTime.now().subtract(const Duration(hours: 3)),
+      );
+      if (mounted) {
+        setState(() {
+          _healthMetrics = metrics;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchApiResult() async {
@@ -172,7 +195,11 @@ class _RoundSummaryScreenState extends State<RoundSummaryScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
+
+            // Health & Fitness Section
+            _buildHealthSummaryCard(),
+            const SizedBox(height: 16),
 
             // Leaderboard / Results Section
             const Text(
@@ -343,6 +370,82 @@ class _RoundSummaryScreenState extends State<RoundSummaryScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHealthSummaryCard() {
+    final m = _healthMetrics;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.darkSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.favorite, color: AppTheme.primaryRed, size: 18),
+                  SizedBox(width: 8),
+                  Text(
+                    'HEALTH & FITNESS',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.0,
+                      color: AppTheme.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => HealthDashboardScreen(
+                        healthService: _healthService,
+                        activeRoundId: widget.round.id,
+                        courseName: widget.bundle.course.name,
+                      ),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Details',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryGreen,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStat('STEPS', m?.formattedSteps ?? '---'),
+              _buildStat('DISTANCE', m?.formattedDistanceKm ?? '---'),
+              _buildStat('CALORIES', m?.formattedCalories ?? '---'),
+              _buildStat('DURATION', m?.formattedDuration ?? '---'),
+            ],
+          ),
+          if (m != null && m.limitationNote != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              m.limitationNote!,
+              style: const TextStyle(fontSize: 10, color: Colors.white38),
+            ),
+          ],
+        ],
       ),
     );
   }

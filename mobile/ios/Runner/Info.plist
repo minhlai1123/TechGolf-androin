@@ -6,6 +6,10 @@
 	<string>TechGolf requires your GPS location to calculate accurate distances to green and hazards on the golf course.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>TechGolf requires your GPS location for course navigation and distance calculation during your golf round.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>TechGolf reads your steps, walking distance, active calories, and golf workouts to track fitness during golf rounds.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>TechGolf saves golf workout sessions and active energy to Apple Health.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
