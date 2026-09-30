@@ -9,6 +9,7 @@ import '../../features/game_modes/game_mode_engine.dart';
 import '../../features/handicap/models/handicap_models.dart';
 import '../../features/statistics/models/statistics_models.dart';
 import '../../features/strokes_gained/models/strokes_gained_models.dart';
+import '../../features/liveplay/models/liveplay_models.dart';
 
 class CourseBundleResponse {
   final CourseBundle bundle;
@@ -413,6 +414,23 @@ class ApiClient {
     } else {
       throw Exception('Failed to get strokes gained: ${response.statusCode}');
     }
+  }
+
+  /// Get initial LivePlay state including round info and realtime leaderboard
+  Future<LivePlayStateModel> getLivePlayState(String roundId) async {
+    final uri = Uri.parse('$baseUrl/rounds/$roundId/liveplay');
+    final response = await _client.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
+    if (response.statusCode == 200) {
+      return LivePlayStateModel.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    } else {
+      throw Exception('Failed to get LivePlay state: ${response.statusCode}');
+    }
+  }
+
+  /// Construct WebSocket URL for LivePlay based on current HTTP baseUrl
+  String get livePlayWsUrl {
+    final cleanBase = baseUrl.replaceFirst('http://', 'ws://').replaceFirst('https://', 'wss://');
+    return '$cleanBase/liveplay';
   }
 
   void close() {

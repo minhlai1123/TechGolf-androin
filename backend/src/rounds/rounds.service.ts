@@ -387,6 +387,174 @@ export class RoundsService {
     );
   }
 
+  /**
+   * Validates that a user has access to a round (as creator or player)
+   */
+  async validateRoundAccess(roundId: string, userId: string): Promise<Round> {
+    return this.getRound(roundId, userId);
+  }
+
+  /**
+   * Retrieves complete LivePlay state for initial client sync or reconnect
+   */
+  async getLivePlayState(roundId: string, userId: string) {
+    const round = await this.getRound(roundId, userId);
+
+    const holes = await this.holeRepo.find({
+      where: { course_id: round.courseId },
+      order: { hole_number: 'ASC' },
+    });
+
+    const scores = await this.scoreRepo.find({
+      where: { roundId },
+      order: { createdAt: 'ASC' },
+    });
+
+    const leaderboard = GameModeEngine.calculateResult(
+      round.gameMode,
+      round.players,
+      holes,
+      scores,
+      round.status === RoundStatus.COMPLETED,
+    );
+
+    const holeMap = new Map<string, Hole>();
+    for (const h of holes) {
+      holeMap.set(h.id, h);
+    }
+
+    const playerSummaries = round.players.map((p) => {
+      const pScores = scores.filter((s) => s.playerId === p.id);
+      let grossScore = 0;
+      let toPar = 0;
+      let totalPutts = 0;
+      let totalPenalties = 0;
+
+      for (const s of pScores) {
+        grossScore += s.grossScore;
+        totalPutts += s.putts;
+        totalPenalties += s.penalties;
+        const h = holeMap.get(s.holeId);
+        if (h) {
+          toPar += s.grossScore - h.par;
+        }
+      }
+
+      const holesCompleted = pScores.length;
+      const thru =
+        holesCompleted === 18 ? 'F' : holesCompleted > 0 ? `${holesCompleted}` : '-';
+
+      return {
+        playerId: p.id,
+        userId: p.userId,
+        playerName: p.playerName,
+        playerOrder: p.playerOrder,
+        teamId: p.teamId,
+        grossScore,
+        toPar,
+        thru,
+        holesCompleted,
+        totalPutts,
+        totalPenalties,
+      };
+    });
+
+    return {
+      round: {
+        id: round.id,
+        courseId: round.courseId,
+        gameMode: round.gameMode,
+        status: round.status,
+        currentHole: round.currentHole,
+        startedAt: round.startedAt,
+        finishedAt: round.finishedAt,
+      },
+      course: {
+        id: round.course ? round.course.id : round.courseId,
+        name: round.course ? round.course.name : 'Golf Course',
+        holesCount: round.course ? round.course.total_holes : 18,
+      },
+      currentHole: round.currentHole,
+      players: round.players.map((p) => ({
+        id: p.id,
+        userId: p.userId,
+        playerName: p.playerName,
+        playerOrder: p.playerOrder,
+        teamId: p.teamId,
+      })),
+      holes: holes.map((h) => ({
+        id: h.id,
+        holeNumber: h.hole_number,
+        par: h.par,
+        handicapIndex: h.handicap_index,
+      })),
+      scores: scores.map((s) => ({
+        id: s.id,
+        playerId: s.playerId,
+        holeId: s.holeId,
+        grossScore: s.grossScore,
+        putts: s.putts,
+        penalties: s.penalties,
+        fairwayHit: s.fairwayHit,
+        gir: s.gir,
+      })),
+      playerSummaries,
+      leaderboard,
+    };
+  }
+
+  /**
+   * Records or updates a score specifically via LivePlay and recalculates realtime leaderboard
+   */
+  async saveLivePlayScore(
+    roundId: string,
+    userId: string,
+    dto: {
+      holeId: string;
+      playerId?: string;
+      grossScore: number;
+      putts?: number;
+      penalties?: number;
+      fairwayHit?: any;
+      gir?: boolean | null;
+    },
+  ) {
+    const round = await this.getRound(roundId, userId);
+
+    let targetPlayerId = dto.playerId;
+    if (!targetPlayerId) {
+      const currentPlayer = round.players?.find((p) => p.userId === userId);
+      if (!currentPlayer) {
+        throw new ForbiddenException('User is not mapped to any player in this round');
+      }
+      targetPlayerId = currentPlayer.id;
+    } else {
+      const exists = round.players?.some((p) => p.id === targetPlayerId);
+      if (!exists) {
+        throw new BadRequestException(`Player ${targetPlayerId} does not belong to round ${roundId}`);
+      }
+    }
+
+    const savedScore = await this.saveScore(roundId, userId, {
+      playerId: targetPlayerId,
+      holeId: dto.holeId,
+      grossScore: dto.grossScore,
+      putts: dto.putts ?? 0,
+      penalties: dto.penalties ?? 0,
+      fairwayHit: dto.fairwayHit ?? null,
+      gir: dto.gir ?? null,
+    });
+
+    const livePlayState = await this.getLivePlayState(roundId, userId);
+
+    return {
+      score: savedScore,
+      leaderboard: livePlayState.leaderboard,
+      playerSummaries: livePlayState.playerSummaries,
+      currentHole: livePlayState.currentHole,
+    };
+  }
+
   private _checkRoundAccess(round: Round, userId: string): void {
     if (round.createdBy === userId) {
       return;

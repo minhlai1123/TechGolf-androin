@@ -3,6 +3,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../courses/models/course_bundle_models.dart';
 import '../../game_modes/game_mode_engine.dart';
+import '../../liveplay/screens/liveplay_screen.dart';
 import '../models/round_models.dart';
 
 enum ScorecardViewCategory {
@@ -137,6 +138,21 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
       appBar: AppBar(
         title: const Text('SCORECARD'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.bolt, color: Colors.amber),
+            tooltip: 'LivePlay Realtime',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => LivePlayScreen(
+                    roundId: widget.round.id,
+                    apiClient: widget.apiClient,
+                  ),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadScorecard,

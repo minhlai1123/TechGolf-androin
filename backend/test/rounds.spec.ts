@@ -386,5 +386,30 @@ describe('RoundsModule Tests', () => {
       expect(result.gameMode).toBe(GameMode.STROKE_PLAY);
       expect(result.strokePlay).toBeDefined();
     });
+
+    test('retrieves LivePlay initial state and leaderboard', async () => {
+      mockRoundRepo.findOne.mockResolvedValue(mockRound);
+      mockHoleRepo.find.mockResolvedValue(mockHoles);
+      mockScoreRepo.find.mockResolvedValue([
+        {
+          id: 'score-1',
+          roundId,
+          playerId: playerId1,
+          holeId: holeId1,
+          grossScore: 4,
+          putts: 2,
+          penalties: 0,
+        },
+      ]);
+
+      const state = await controller.getLivePlayState({ userId } as any, roundId);
+      expect(state).toBeDefined();
+      expect(state.round.id).toBe(roundId);
+      expect(state.course.name).toBe('Pine Valley Golf Club');
+      expect(state.leaderboard).toBeDefined();
+      expect(state.playerSummaries).toBeDefined();
+      expect(state.playerSummaries[0].grossScore).toBe(4);
+      expect(state.playerSummaries[0].thru).toBe('1');
+    });
   });
 });

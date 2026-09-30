@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../courses/models/course_bundle_models.dart';
 import '../../game_modes/game_mode_engine.dart';
 import '../../golf_map/screens/golf_map_screen.dart';
+import '../../liveplay/screens/liveplay_screen.dart';
 import '../models/round_models.dart';
 import 'scorecard_screen.dart';
 import 'round_summary_screen.dart';
@@ -211,6 +212,18 @@ class _ScoreEntryScreenState extends State<ScoreEntryScreen> {
     );
   }
 
+  void _openLivePlay() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LivePlayScreen(
+          roundId: widget.round.id,
+          apiClient: widget.apiClient,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final hole = _currentHole;
@@ -224,6 +237,11 @@ class _ScoreEntryScreenState extends State<ScoreEntryScreen> {
       appBar: AppBar(
         title: Text('HOLE ${hole.holeNumber}'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.bolt, color: Colors.amber),
+            tooltip: 'LivePlay Realtime',
+            onPressed: _openLivePlay,
+          ),
           IconButton(
             icon: const Icon(Icons.map_outlined, color: AppTheme.primaryGreen),
             tooltip: 'View GPS Map',

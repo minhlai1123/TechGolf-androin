@@ -139,4 +139,17 @@ export class RoundsController {
   ) {
     return this.roundsService.getRoundResult(id, user.userId);
   }
+
+  @Get(':id/liveplay')
+  @ApiOperation({ summary: 'Get initial LivePlay state including round info and realtime leaderboard' })
+  @ApiParam({ name: 'id', description: 'Round UUID' })
+  @ApiResponse({ status: 200, description: 'LivePlay session state retrieved successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden: user does not have access to this round' })
+  @ApiResponse({ status: 404, description: 'Round not found' })
+  async getLivePlayState(
+    @CurrentUser() user: UserPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.roundsService.getLivePlayState(id, user.userId);
+  }
 }
