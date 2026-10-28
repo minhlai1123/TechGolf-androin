@@ -41,7 +41,19 @@ fun GpsRangefinderScreen(
     var playerLat by remember { mutableDoubleStateOf(21.028500) }
     var playerLng by remember { mutableDoubleStateOf(105.854200) }
 
-    val currentHole = holes.getOrNull(currentHoleIndex) ?: return
+    if (holes.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF121212)),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = Color(0xFF4CAF50))
+        }
+        return
+    }
+
+    val currentHole = holes.getOrElse(currentHoleIndex) { holes.first() }
 
     // Calculate Geodesic distances to Green Front, Center, Back
     val distFrontMeters = if (currentHole.greenFrontLat != null && currentHole.greenFrontLng != null) {

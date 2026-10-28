@@ -182,8 +182,20 @@ fun ScoreEntryScreen(
     val scope = rememberCoroutineScope()
 
     var selectedPlayerIndex by remember { mutableIntStateOf(0) }
-    val currentHole = holes.firstOrNull { it.holeNumber == holeNumber } ?: return
-    val currentPlayer = players.getOrNull(selectedPlayerIndex) ?: return
+    if (holes.isEmpty() || players.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    val currentHole = holes.firstOrNull { it.holeNumber == holeNumber } ?: holes.first()
+    val currentPlayer = players.getOrElse(selectedPlayerIndex) { players.first() }
 
     var grossScore by remember { mutableIntStateOf(currentHole.par) }
     var putts by remember { mutableIntStateOf(2) }

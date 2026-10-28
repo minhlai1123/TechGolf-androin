@@ -38,7 +38,13 @@ fun AppNavigation() {
     var userClubs by remember { mutableStateOf<List<GolfBagClub>>(emptyList()) }
 
     // Check auth status
-    val startDestination = if (authRepo.currentUserId != null) "courses" else "login"
+    val startDestination = remember {
+        try {
+            if (authRepo.currentUserId != null) "courses" else "login"
+        } catch (_: Exception) {
+            "login"
+        }
+    }
 
     NavHost(navController = navController, startDestination = startDestination) {
         composable("login") {
