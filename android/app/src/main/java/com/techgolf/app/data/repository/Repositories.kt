@@ -6,11 +6,12 @@ import com.techgolf.app.data.models.*
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.postgrest.from
-import io.github.jan.supabase.realtime.channel
-import io.github.jan.supabase.realtime.postgresChangeFlow
-import io.github.jan.supabase.realtime.realtime
+import io.github.jan.supabase.postgrest.query.filter.FilterOperation
+import io.github.jan.supabase.postgrest.query.filter.FilterOperator
+import io.github.jan.supabase.realtime.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.util.UUID
@@ -264,9 +265,15 @@ class RoundRepository {
         val c = client ?: return emptyFlow()
         return try {
             val channel = c.realtime.channel("round_scores_$roundId")
-            channel.postgresChangeFlow(schema = "public") {
+            channel.postgresChangeFlow<PostgresAction>(schema = "public") {
                 table = "round_scores"
-                filter = "round_id=eq.$roundId"
+            }.mapNotNull { action ->
+                val score = when (action) {
+                    is PostgresAction.Insert -> runCatching { action.decodeRecord<RoundScore>() }.getOrNull()
+                    is PostgresAction.Update -> runCatching { action.decodeRecord<RoundScore>() }.getOrNull()
+                    else -> null
+                }
+                if (score?.roundId == roundId) score else null
             }
         } catch (_: Exception) {
             emptyFlow()
