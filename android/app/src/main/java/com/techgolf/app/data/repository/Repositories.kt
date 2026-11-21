@@ -19,11 +19,11 @@ import java.util.UUID
 class AuthRepository {
     private val client get() = SupabaseClientManager.client
 
-    val currentUserId: String?
+    val currentUserId: String
         get() = try {
-            client?.auth?.currentUserOrNull()?.id
+            client?.auth?.currentUserOrNull()?.id ?: SupabaseClientManager.getOrCreateUserId()
         } catch (_: Exception) {
-            null
+            SupabaseClientManager.getOrCreateUserId()
         }
 
     suspend fun signUp(email: String, pass: String, fullName: String): Result<Unit> = runCatching {
@@ -50,16 +50,19 @@ class AuthRepository {
     }
 
     suspend fun getCurrentProfile(): Profile? {
-        val uid = currentUserId ?: return null
-        val c = client ?: return null
+        val uid = currentUserId
+        val c = client ?: return getFallbackProfile(uid)
         return runCatching {
             c.from("profiles")
                 .select {
                     filter { eq("id", uid) }
                 }
-                .decodeSingleOrNull<Profile>()
-        }.getOrNull()
+                .decodeSingleOrNull<Profile>() ?: getFallbackProfile(uid)
+        }.getOrElse { getFallbackProfile(uid) }
     }
+
+    private fun getFallbackProfile(uid: String): Profile =
+        Profile(id = uid, email = "golfer@techgolf.app", fullName = "Golfer", handicapIndex = 18.0)
 }
 
 class CourseRepository {
@@ -131,6 +134,28 @@ class CourseRepository {
             longitude = 105.8542,
             totalHoles = 18,
             description = "Championship 18-hole golf facility."
+        ),
+        Course(
+            id = "demo-long-bien",
+            name = "Long Bien Golf Course",
+            address = "Phuc Dong, Long Bien",
+            city = "Hanoi",
+            country = "Vietnam",
+            latitude = 21.0392,
+            longitude = 105.9015,
+            totalHoles = 27,
+            description = "27-hole Nelson & Haworth designed golf course."
+        ),
+        Course(
+            id = "demo-tan-son-nhat",
+            name = "Tan Son Nhat Golf Course",
+            address = "6 Tan Son, Ward 12, Go Vap",
+            city = "Ho Chi Minh City",
+            country = "Vietnam",
+            latitude = 10.8315,
+            longitude = 106.6668,
+            totalHoles = 36,
+            description = "36-hole international standard golf course."
         )
     )
 
@@ -373,3 +398,4 @@ class ShotRepository {
         GolfBagClub("c-7", "u-1", "PUTTER", "Blade Putter", 0.0)
     )
 }
+

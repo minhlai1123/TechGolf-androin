@@ -15,9 +15,18 @@ object SupabaseClientManager {
     private const val PREF_NAME = "techgolf_supabase_prefs"
     private const val KEY_URL = "supabase_url"
     private const val KEY_ANON_KEY = "supabase_anon_key"
+    private const val KEY_GUEST_USER_ID = "guest_user_id"
 
     private var prefs: SharedPreferences? = null
     private var _client: SupabaseClient? = null
+
+    fun getOrCreateUserId(): String {
+        val existing = prefs?.getString(KEY_GUEST_USER_ID, null)
+        if (!existing.isNullOrBlank()) return existing
+        val newId = java.util.UUID.randomUUID().toString()
+        prefs?.edit()?.putString(KEY_GUEST_USER_ID, newId)?.apply()
+        return newId
+    }
 
     val client: SupabaseClient?
         get() = _client

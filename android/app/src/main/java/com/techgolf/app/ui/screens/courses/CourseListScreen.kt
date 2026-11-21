@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GolfCourse
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.techgolf.app.data.models.Course
 import com.techgolf.app.data.repository.CourseRepository
+import com.techgolf.app.ui.screens.auth.SupabaseConfigDialog
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,18 +30,26 @@ fun CourseListScreen(
     onNavigateToStats: () -> Unit
 ) {
     val courseRepo = remember { CourseRepository() }
+    val scope = rememberCoroutineScope()
     var courses by remember { mutableStateOf<List<Course>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var searchQuery by remember { mutableStateOf("") }
+    var showConfigDialog by remember { mutableStateOf(false) }
+
+    fun reloadCourses() {
+        scope.launch {
+            isLoading = true
+            courses = try {
+                courseRepo.getCourses()
+            } catch (_: Exception) {
+                emptyList()
+            }
+            isLoading = false
+        }
+    }
 
     LaunchedEffect(Unit) {
-        isLoading = true
-        courses = try {
-            courseRepo.getCourses()
-        } catch (_: Exception) {
-            emptyList()
-        }
-        isLoading = false
+        reloadCourses()
     }
 
     val filtered = courses.filter {
@@ -49,7 +60,7 @@ fun CourseListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Danh s√°ch S√¢n Golf", fontWeight = FontWeight.Bold) },
+                title = { Text("TechGolf", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
@@ -57,6 +68,13 @@ fun CourseListScreen(
                 actions = {
                     TextButton(onClick = onNavigateToStats) {
                         Text("Stats/WHS", color = Color.White)
+                    }
+                    IconButton(onClick = { showConfigDialog = true }) {
+                        Icon(
+                            Icons.Default.Settings,
+                            contentDescription = "C?u hÏnh Supabase",
+                            tint = Color.White
+                        )
                     }
                 }
             )
@@ -71,7 +89,7 @@ fun CourseListScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                label = { Text("T√¨m ki·∫øm s√¢n ho·∫∑c th√†nh ph·ªë...") },
+                label = { Text("TÏm ki?m s‚n golf ho?c th‡nh ph?...") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -84,7 +102,7 @@ fun CourseListScreen(
                 }
             } else if (filtered.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Kh√¥ng t√¨m th·∫•y s√¢n golf n√†o", color = Color.Gray)
+                    Text("KhÙng tÏm th?y s‚n golf n‡o", color = Color.Gray)
                 }
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -96,6 +114,15 @@ fun CourseListScreen(
                     }
                 }
             }
+        }
+
+        if (showConfigDialog) {
+            SupabaseConfigDialog(
+                onDismiss = {
+                    showConfigDialog = false
+                    reloadCourses()
+                }
+            )
         }
     }
 }
@@ -144,7 +171,7 @@ fun CourseCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "${course.city}, ${course.country} ‚Ä¢ ${course.totalHoles} h·ªë",
+                        text = "${course.city}, ${course.country} ï ${course.totalHoles} h?",
                         fontSize = 13.sp,
                         color = Color.Gray
                     )
@@ -154,7 +181,7 @@ fun CourseCard(
             IconButton(onClick = onPlayClick) {
                 Icon(
                     Icons.Default.PlayArrow,
-                    contentDescription = "Ch∆°i",
+                    contentDescription = "Choi",
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
